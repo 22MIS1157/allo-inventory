@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // cron endpoint to release expired reservations
 // can be called by Vercel Cron every minute
 export async function GET() {

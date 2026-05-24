@@ -28,7 +28,7 @@ async function main() {
         name: 'Wireless Earbuds Pro',
         description: 'Active noise cancellation, 24hr battery life',
         price: 2999,
-        image: 'https://images.unsplash.com/photo-1590658268037-6bf12f032f55?w=400',
+        image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400',
       },
     }),
     prisma.product.create({
@@ -36,7 +36,7 @@ async function main() {
         name: 'Smart Watch Ultra',
         description: 'AMOLED display, heart rate monitor, GPS',
         price: 5499,
-        image: 'https://images.unsplash.com/photo-1546868871-af0de0ae72be?w=400',
+        image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=400',
       },
     }),
     prisma.product.create({

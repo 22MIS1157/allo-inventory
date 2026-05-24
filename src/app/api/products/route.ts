@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // clean up expired reservations before returning products
 // this is the "lazy cleanup" approach
 async function releaseExpired() {
