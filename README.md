@@ -1,23 +1,21 @@
 # Allo Inventory — Concurrency-Safe Reservation System
 
-### 🚀 Live Demo: [https://allo-inventory-self.vercel.app/](https://allo-inventory-self.vercel.app/)
-*Created by a pre-final year VIT student aiming for that Day-0 Super Dream placement offer!*
-
+### Live Demo: [https://allo-inventory-self.vercel.app/](https://allo-inventory-self.vercel.app/)
 ---
 
-## 📖 The Core Problem: Why We Need Concurrency Safety
+## The Core Problem: Why We Need Concurrency Safety
 During flash sales or high-traffic events (think *Day-1 Campus Placement* portal registrations or booking tickets for *Riviera*), standard database systems fall apart due to race conditions. 
 
 When a user proceeds to checkout, payment processing takes several minutes (UPI redirects, card verification, OTP confirmation, etc.). 
 * **The Naive Approach (Decrement on Payment)**: If we wait for the payment confirmation to decrement stock, multiple users can see the same last unit, checkout at the same time, pay successfully, and then operations has to manually refund the extra users. *Not a good developer experience.*
 * **The Cart Approach (Decrement on Add-to-Cart)**: If we block stock immediately upon adding to the cart, abandoned carts will exhaust our virtual inventory, and sales will plummet.
 
-### 💡 The Solution: Temporary Locks (Reservations)
+### The Solution: Temporary Locks (Reservations)
 We hold the stock for a 10-minute checkout window. If the payment succeeds, the stock is permanently decremented. If they cancel or the timer runs out, the hold is released automatically so other users can buy it.
 
 ---
 
-## 🛠️ Concurrency Handling (The Top 1% Engineering)
+## Concurrency Handling 
 This is where we stand out from the other 1,335 candidates who just wrote standard `prisma.update` queries. In a multi-server serverless environment, standard updates lead to classic race conditions.
 
 To guarantee **race-condition-free reservations**, I used a combination of **PostgreSQL Row-Level Locking** and **Serializable Isolation Levels** inside an interactive transaction:
@@ -41,7 +39,7 @@ const reservation = await prisma.$transaction(async (tx) => {
 
 ---
 
-## 🧹 Reservation Expiry & Lazy Cleanup
+## Reservation Expiry & Lazy Cleanup
 To ensure we don't hog connections or rely on expensive, complicated worker queues, I built a hybrid cleanup system:
 * **Lazy Cleanup on Read (Primary)**: Every time `GET /api/products` is hit, it triggers a fast cleanup transaction that frees up any pending reservations that are older than 10 minutes. This guarantees the client UI always renders 100% accurate available stock without overhead.
 * **Vercel Cron (Safety Net)**: A background cron job `/api/cron/cleanup` is set to run periodically (configured in `vercel.json`) to release expired stock when there's zero user traffic on the site.
@@ -49,13 +47,13 @@ To ensure we don't hog connections or rely on expensive, complicated worker queu
 
 ---
 
-## ⚡ Idempotency Support (Bonus Section)
+## Idempotency Support
 To prevent network retries from creating duplicate reservations (e.g., if a user double-clicks the purchase button over hostel WiFi), I implemented idempotency on the `POST /api/reservations` and `/api/reservations/:id/confirm` endpoints.
 * **How**: By sending an `Idempotency-Key` header, the server caches the response status and body in the `IdempotencyKey` database table. On duplicate requests, it returns the cached response instantly without repeating the database side effects.
 
 ---
 
-## 💻 Tech Stack
+## Tech Stack
 * **Framework**: Next.js 14 (App Router) — fully dynamic endpoints with `export const dynamic = 'force-dynamic'` to prevent Vercel route caching.
 * **Type Safety**: End-to-end TypeScript with **Zod** schema validations shared between API routes and frontend forms.
 * **Database**: Hosted **Supabase PostgreSQL** utilizing connection pooling (`pgbouncer=true` on port `6543`) to prevent serverless instance connection exhaust.
@@ -64,7 +62,7 @@ To prevent network retries from creating duplicate reservations (e.g., if a user
 
 ---
 
-## 🚀 How to Run Locally
+## How to Run Locally
 
 ### 1. Prerequisites
 * Node.js 18+
@@ -98,7 +96,7 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser!
 
 ---
 
-## 📈 Trade-offs & Future Scope
+## Trade-offs & Future Scope
 * **Redis for Locks & Cache**: While Postgres `FOR UPDATE` is robust for a single instance, scaling to distributed databases requires a distributed lock manager like **Redlock (Redis)**. In a production system, idempotency keys should also live in Redis with a Time-To-Live (TTL) of 24 hours.
 * **WebSockets for Real-time Stock**: Adding WebSockets/Server-Sent Events (SSE) would push stock depletion updates to other active clients instantly without requiring page refetches.
 * **Authentication**: There's currently no auth wrapper. In production, reservations must be cryptographically associated with a session token to avoid hijacking.
