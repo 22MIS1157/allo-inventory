@@ -2,7 +2,7 @@
 
 An inventory reservation system for multi-warehouse retail. Handles the race condition between checkout and payment by temporarily holding stock for a configurable window (10 minutes by default).
 
-Live URL: *(will update after deployment)*
+Live URL: *Deploying...*
 
 ## How to run locally
 
